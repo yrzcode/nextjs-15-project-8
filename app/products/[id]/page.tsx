@@ -8,7 +8,7 @@ import { formatCurrency } from "@/utils/format";
 
 export default async function SingleProductPage({
 	params,
-}: { params: { id: string } }) {
+}: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
 	const product = await fetchSingleProduct(id);
 	const { name, image, company, description, price } = product;
