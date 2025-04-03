@@ -1,6 +1,4 @@
 import ProductsContainer from "@/components/products/ProductsContainer";
-import Server from "./Server";
-import Client from "./Client";
 
 export default function ProductsPage({
 	searchParams,
