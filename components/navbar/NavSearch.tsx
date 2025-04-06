@@ -21,11 +21,12 @@ export default function NavSearch() {
 		replace(`/products?${params.toString()}`);
 	}, 500);
 
+	const searchValue = searchParams.get("search");
 	useEffect(() => {
-		if (!searchParams.get("search")) {
+		if (!searchValue) {
 			setSearch("");
 		}
-	}, [searchParams.get("search")]);
+	}, [searchValue]);
 
 	return (
 		<Input
