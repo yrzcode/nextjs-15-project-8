@@ -235,7 +235,7 @@ export const toggleFavoriteAction = async ({
 	}
 };
 
-export const fetchUserFavorites = async (productId: string) => {
+export const fetchUserFavorites = async () => {
 	const user = await getAuthUser();
 	const favorites = await db.favorite.findMany({
 		where: {
