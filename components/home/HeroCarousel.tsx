@@ -19,9 +19,9 @@ export default function HeroCarousel() {
 		<div className="hidden lg:block">
 			<Carousel>
 				<CarouselContent>
-					{carouseImages.map((image, index) => {
+					{carouseImages.map((image) => {
 						return (
-							<CarouselItem key={index}>
+							<CarouselItem key={image.src}>
 								<Card>
 									<CardContent className="p-2">
 										<Image
