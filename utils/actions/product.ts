@@ -1,38 +1,19 @@
 "use server";
 
 import db from "@/utils/db";
-import type { ActionFunction } from "./types";
+import type { ActionFunction } from "@/utils/types";
 import { redirect } from "next/navigation";
-import { currentUser } from "@clerk/nextjs/server";
+import { getAdminUser, getAuthUser } from "@/utils/actions/user";
 import {
 	imageSchema,
 	productSchema,
-	reviewSchema,
 	validateWithZodSchema,
 } from "@/utils/schemas";
 import { deleteImage, uploadImage } from "@/utils/supabase";
+import { renderError } from "@/utils/actions/error";
 import { revalidatePath } from "next/cache";
 
-const getAuthUser = async () => {
-	const user = await currentUser();
-	if (!user) redirect("/");
-	return user;
-};
-
-const getAdminUser = async () => {
-	const user = await currentUser();
-	if (user?.id !== process.env.ADMIN_USER_ID) redirect("/");
-	return user;
-};
-const renderError = (error: unknown): { message: string } => {
-	console.log(error);
-	return {
-		message: error instanceof Error ? error.message : "there was an error...",
-	};
-};
-
 export const fetchFeaturedProducts = async () => {
-	// await new Promise((resolve) => setTimeout(resolve, 1000));
 	return db.product.findMany({
 		where: {
 			featured: true,
@@ -187,171 +168,4 @@ export const updateProductImageAction = async <T>(
 	} catch (error) {
 		return renderError(error);
 	}
-};
-
-export const fetchFavoriteId = async ({ productId }: { productId: string }) => {
-	const user = await getAuthUser();
-	const favorite = await db.favorite.findFirst({
-		where: {
-			productId,
-			clerkId: user.id,
-		},
-		select: {
-			id: true,
-		},
-	});
-	return favorite?.id || null;
-};
-
-export const toggleFavoriteAction = async ({
-	productId,
-	favoriteId,
-	pathname,
-}: {
-	productId: string;
-	favoriteId: string | null;
-	pathname: string;
-}) => {
-	const user = await getAuthUser();
-	try {
-		if (favoriteId) {
-			await db.favorite.delete({
-				where: {
-					id: favoriteId,
-				},
-			});
-		} else {
-			await db.favorite.create({
-				data: {
-					productId,
-					clerkId: user.id,
-				},
-			});
-		}
-		revalidatePath(pathname);
-		return { message: favoriteId ? "removed from faves" : "add to faves" };
-	} catch (error) {
-		return renderError(error);
-	}
-};
-
-export const fetchUserFavorites = async () => {
-	const user = await getAuthUser();
-	const favorites = await db.favorite.findMany({
-		where: {
-			clerkId: user.id,
-		},
-		include: {
-			product: true,
-		},
-	});
-	return favorites;
-};
-
-export const createReviewAction = async <T>(
-	prevState: T,
-	formData: FormData,
-) => {
-	const user = getAuthUser();
-	try {
-		const rawData = Object.fromEntries(formData);
-		const validatedFields = validateWithZodSchema(reviewSchema, rawData);
-		await db.review.create({
-			data: {
-				...validatedFields,
-				clerkId: (await user).id,
-			},
-		});
-		revalidatePath(`/products/${validatedFields.productId}`);
-		return { message: "review submitted successfully" };
-	} catch (error) {
-		return renderError(error);
-	}
-};
-
-export const fetchProductReviews = async ({
-	productId,
-}: { productId: string }) => {
-	const reviews = await db.review.findMany({
-		where: {
-			productId,
-		},
-		orderBy: {
-			createdAt: "desc",
-		},
-	});
-	return reviews;
-};
-
-export const fetchProductReviewsByUser = async () => {
-	const user = await getAuthUser();
-	const reviews = await db.review.findMany({
-		where: {
-			clerkId: user.id,
-		},
-		select: {
-			id: true,
-			rating: true,
-			comment: true,
-			product: {
-				select: {
-					image: true,
-					name: true,
-				},
-			},
-		},
-	});
-	return reviews;
-};
-
-export const deleteReviewAction = async ({
-	reviewId,
-}: { reviewId: string }) => {
-	const user = await getAuthUser();
-	try {
-		await db.review.delete({
-			where: {
-				id: reviewId,
-				clerkId: user.id,
-			},
-		});
-		revalidatePath("/reviews");
-		return { message: "review deleted successfully" };
-	} catch (error) {
-		return renderError(error);
-	}
-};
-
-export const findExistingReview = async ({
-	userId,
-	productId,
-}: { userId: string; productId: string }) => {
-	const review = db.review.findFirst({
-		where: {
-			productId,
-			clerkId: userId,
-		},
-	});
-	return review;
-};
-
-export const fetchProductRating = async ({
-	productId,
-}: { productId: string }) => {
-	const res = await db.review.groupBy({
-		by: ["productId"],
-		_avg: {
-			rating: true,
-		},
-		_count: {
-			rating: true,
-		},
-		where: {
-			productId,
-		},
-	});
-	return {
-		rating: res[0]?._avg.rating?.toFixed(1) ?? 0,
-		count: res[0]?._count.rating ?? 0,
-	};
 };
