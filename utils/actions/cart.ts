@@ -1,12 +1,12 @@
 "use server";
 
 import db from "@/utils/db";
-import { auth, clerkMiddleware } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { renderError } from "@/utils/actions/error";
 import { redirect } from "next/navigation";
 import { getAuthUser } from "@/utils/actions/user";
-import { Cart } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import type { Cart } from "@prisma/client";
 
 export const fetchCartItems = async () => {
 	const { userId } = await auth();

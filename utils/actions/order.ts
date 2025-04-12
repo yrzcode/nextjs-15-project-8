@@ -6,10 +6,7 @@ import { getAdminUser, getAuthUser } from "@/utils/actions/user";
 import { fetchOrCreateCart } from "@/utils/actions";
 import { redirect } from "next/navigation";
 
-export const createOrderAction = async <T>(
-	prevState: T,
-	formData: FormData,
-) => {
+export const createOrderAction = async () => {
 	const user = await getAuthUser();
 	let orderId: null | string = null;
 	let cartId: null | string = null;
